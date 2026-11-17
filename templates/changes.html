@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><h2>Changes</h2>
+<form method="get">
+    <select name="project" onchange="this.form.submit()">
+        <option value="">All projects</option>
+        {% for p in projects %}
+        <option value="{{ p.id }}" {% if p.id|string == sel %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+    </select>
+</form>
+<div class="scroll"><table>
+    <tr><th>Time (UTC)</th><th>Project</th><th>Row</th><th>Column</th><th>Old value</th><th>New value</th><th>Changed by</th></tr>
+    {% for c in changes %}
+    <tr>
+        <td>{{ c.changed_at }}</td>
+        <td>{{ c.project_name }}</td>
+        <td>{{ c.position + 1 }}</td>
+        <td>{{ c.col }}</td>
+        <td>{{ c.old_value }}</td>
+        <td>{{ c.new_value }}</td>
+        <td>{{ c.email }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No changes yet.</td></tr>
+    {% endfor %}
+</table></div></div>
+{% endblock %}

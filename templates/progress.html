@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+{% for r in reports %}
+<div class="card" id="project-{{ r.project_id }}">
+    <h2>{{ r.project_name }}</h2>
+    <p class="muted">{{ r.total_records }} records · {{ r.pages }} pages ·
+        <a href="{{ url_for('admin.export_project', pid=r.project_id) }}">Download CSV</a> ·
+        <a href="{{ url_for('admin.admin_changes', project=r.project_id) }}">Change log</a></p>
+    <div class="scroll"><table>
+        <tr><th>Revisor</th><th>Pages done</th><th>Progress</th><th>Records saved</th><th>Last activity (UTC)</th></tr>
+        {% for row in r.rows %}
+        <tr>
+            <td>{{ row.email }}</td>
+            <td>{{ row.pages_done }} / {{ r.pages }}</td>
+            <td><div class="bar"><div style="width:{{ row.pct }}%"></div></div> {{ row.pct }}%</td>
+            <td>{{ row.records_revised }} / {{ r.total_records }}</td>
+            <td>{{ row.last_activity or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">No revisors have registered yet.</td></tr>
+        {% endfor %}
+    </table></div>
+</div>
+{% else %}
+<div class="card"><p>No projects yet. Upload a CSV from the Projects page.</p></div>
+{% endfor %}
+{% endblock %}

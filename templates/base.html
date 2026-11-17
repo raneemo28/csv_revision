@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CSV Revision</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav>
+    <a href="{{ url_for('project.projects') }}"><b>CSV Revision</b></a>
+    {% if user %}
+        <a href="{{ url_for('project.projects') }}">Projects</a>
+        {% if user.is_admin %}
+            <a href="{{ url_for('admin.admin_progress') }}">Progress</a>
+            <a href="{{ url_for('admin.admin_changes') }}">Changes</a>
+        {% endif %}
+        <span class="right">
+            {{ user.email }}{% if user.is_admin %} (admin){% endif %} ·
+            <form method="post" action="{{ url_for('auth.logout') }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="linklike">Logout</button>
+            </form>
+        </span>
+    {% else %}
+        <span class="right">
+            <a href="{{ url_for('auth.login') }}">Login</a>
+            {% if allow_registration %}· <a href="{{ url_for('auth.register') }}">Register</a>{% endif %}
+        </span>
+    {% endif %}
+</nav>
+<main>
+    {% for m in get_flashed_messages() %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='autosize.js') }}"></script>
+<script src="{{ url_for('static', filename='page.js') }}"></script>
+</body>
+</html>

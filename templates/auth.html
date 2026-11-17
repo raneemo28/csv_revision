@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:380px">
+    <h2>{{ title }}</h2>
+    {% if title == 'Register' %}<p class="muted">Create a revisor account to start revising projects.</p>{% endif %}
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="field" type="email" name="email" placeholder="Email" autocomplete="email" required>
+        <input class="field" type="password" name="password" placeholder="Password{% if title == 'Register' %} (8+ characters){% endif %}"
+               autocomplete="{{ 'new-password' if title == 'Register' else 'current-password' }}"
+               {% if title == 'Register' %}minlength="8"{% endif %} required>
+        <button class="btn" type="submit">{{ title }}</button>
+    </form>
+    {% if title == 'Register' %}
+        <p><a href="{{ url_for('auth.login') }}">Already have an account? Login</a></p>
+    {% elif allow_registration %}
+        <p><a href="{{ url_for('auth.register') }}">New revisor? Register</a></p>
+    {% endif %}
+</div>
+{% endblock %}

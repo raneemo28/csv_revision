@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><h2>Your projects</h2>
+<div class="scroll"><table>
+    <tr><th>Project</th><th>Records</th><th>Your progress</th><th>Records saved</th><th></th></tr>
+    {% for p in progress %}
+    <tr>
+        <td>{{ p.project_name }}</td>
+        <td>{{ p.total_records }}</td>
+        <td>
+            <div class="bar"><div style="width:{{ p.pct }}%"></div></div>
+            {{ p.pages_done }} / {{ p.pages }} pages done ({{ p.pct }}%)
+        </td>
+        <td>{{ p.records_revised }} / {{ p.total_records }}</td>
+        <td>
+            {% if p.pages_done >= p.pages %}
+                <a class="btn gray" href="{{ url_for('project.project', pid=p.project_id) }}">Review again</a>
+            {% elif p.pages_done == 0 %}
+                <a class="btn" href="{{ url_for('project.project', pid=p.project_id) }}">Start</a>
+            {% else %}
+                <a class="btn" href="{{ url_for('project.project', pid=p.project_id, page=p.next_page) }}">Continue (page {{ p.next_page }})</a>
+            {% endif %}
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No projects yet. The admin has not uploaded any CSV.</td></tr>
+    {% endfor %}
+</table></div></div>
+{% endblock %}

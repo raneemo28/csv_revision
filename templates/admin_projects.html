@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><h2>Upload a CSV</h2>
+<p class="muted">The first row is the header. Each following row becomes a record, shown 10 per page to every revisor.</p>
+<form method="post" action="{{ url_for('project.upload') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input class="field" name="name" placeholder="Project name" maxlength="120" required>
+    <input class="field" type="file" name="file" accept=".csv,text/csv" required>
+    <button class="btn" type="submit">Upload</button>
+</form></div>
+
+<div class="card"><h2>Projects</h2>
+<div class="scroll"><table>
+    <tr><th>Project</th><th>Records</th><th>Pages</th><th>Revisors who started</th><th></th></tr>
+    {% for r in reports %}
+    <tr>
+        <td>{{ r.project_name }}</td>
+        <td>{{ r.total_records }}</td>
+        <td>{{ r.pages }}</td>
+        <td>{{ r.rows|selectattr('records_revised')|list|length }} of {{ r.rows|length }}</td>
+        <td>
+            <a class="btn gray" href="{{ url_for('admin.admin_progress') }}#project-{{ r.project_id }}">Progress</a>
+            <a class="btn green" href="{{ url_for('admin.export_project', pid=r.project_id) }}">Download CSV</a>
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No projects yet. Upload a CSV above.</td></tr>
+    {% endfor %}
+</table></div></div>
+{% endblock %}

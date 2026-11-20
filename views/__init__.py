@@ -146,7 +146,16 @@ def create_blueprints(get_db, allow_registration: bool, page_size: int, limiter)
             return redirect(url_for("project.projects"))
         try:
             header, rows = parse_csv(upload_file.read())
-            get_services()["project"].create_project(request.form.get("name", ""), header, rows)
+            labels = {}
+            labels_text = request.form.get("labels", "").strip()
+            if labels_text:
+                import json
+                try:
+                    labels = json.loads(labels_text)
+                except json.JSONDecodeError:
+                    flash("Labels must be valid JSON object mapping column names to arrays of options.")
+                    return redirect(url_for("project.projects"))
+            get_services()["project"].create_project(request.form.get("name", ""), header, rows, labels)
         except ValueError as exc:
             flash(str(exc))
         else:

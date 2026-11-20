@@ -6,6 +6,8 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input class="field" name="name" placeholder="Project name" maxlength="120" required>
     <input class="field" type="file" name="file" accept=".csv,text/csv" required>
+    <textarea class="field" name="labels" placeholder='Optional: JSON mapping column names to label options, e.g. {"Status": ["Open", "Closed", "Pending"], "Priority": ["Low", "Medium", "High"]}' rows="3"></textarea>
+    <p class="muted small">Leave empty for free-text input on all columns.</p>
     <button class="btn" type="submit">Upload</button>
 </form></div>
 

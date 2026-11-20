@@ -19,6 +19,11 @@ class Project:
     id: int
     name: str
     header: List[str]
+    labels: dict = None
+
+    def __post_init__(self):
+        if self.labels is None:
+            self.labels = {}
 
 
 @dataclass
@@ -30,6 +35,7 @@ class Record:
     original_values: List[str]
     revised_values: Optional[List[str]] = None   # None = this revisor has not saved it yet
     revised_at: Optional[str] = None             # UTC "YYYY-MM-DD HH:MM:SS"
+    note: str = ""                                # Revisor's note for this record
 
     @property
     def values(self) -> List[str]:
@@ -44,6 +50,7 @@ class Revision:
     email: str
     values: List[str]
     revised_at: str
+    note: str = ""
 
 
 @dataclass

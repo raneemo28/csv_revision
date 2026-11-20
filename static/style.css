@@ -129,6 +129,27 @@ textarea.autosize:focus {
     box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.2);
 }
 
+/* Select dropdown for labeled columns */
+select.autosize {
+    width: 100%;
+    min-width: 120px;
+    min-height: 38px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+select.autosize:focus {
+    outline: none;
+    border-color: #2d6cdf;
+    box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.2);
+}
+
 /* For inputs that need to be adaptable too */
 input.autosize {
     width: 100%;

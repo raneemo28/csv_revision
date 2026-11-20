@@ -90,14 +90,16 @@ class DefaultProjectService(ProjectService):
         self.revision_repo = revision_repo
         self.uow = uow
 
-    def create_project(self, name: str, header: List[str], rows: List[List[str]]) -> Project:
+    def create_project(self, name: str, header: List[str], rows: List[List[str]], labels: dict = None) -> Project:
         name = (name or "").strip()
         if not name:
             raise ValueError("Give the project a name.")
         if len(name) > 120:
             raise ValueError("The project name is too long (120 characters maximum).")
+        if labels is None:
+            labels = {}
         try:
-            project = self.project_repo.create(name, header)
+            project = self.project_repo.create(name, header, labels)
             self.record_repo.create_batch(project.id, rows)
             self.uow.commit()
         except Exception:
@@ -113,7 +115,7 @@ class DefaultProjectService(ProjectService):
 
     def export_project(self, project_id: int) -> Tuple[List[str], List[List[str]]]:
         """Original columns, then for every revisor who saved something in this project:
-        [revisor email] [one column per original column with their values] [revised at (UTC)]."""
+        [revisor email] [one column per original column with their values] [note] [revised at (UTC)]."""
         project = self.project_repo.get_by_id(project_id)
         if not project:
             raise ValueError("Project not found")
@@ -129,6 +131,7 @@ class DefaultProjectService(ProjectService):
         for email in emails:
             header.append(csv_safe(f"Revisor email ({email})"))
             header.extend(csv_safe(f"{col} ({email})") for col in project.header)
+            header.append(csv_safe(f"Note ({email})"))
             header.append(csv_safe(f"Revised at UTC ({email})"))
 
         rows = []
@@ -137,13 +140,22 @@ class DefaultProjectService(ProjectService):
             for email in emails:
                 rev = by_user[email].get(record.id)
                 if rev is None:
-                    row.extend([""] * (width + 2))
+                    row.extend([""] * (width + 3))
                 else:
                     values = list(rev.values) + [""] * (width - len(rev.values))
                     row.append(csv_safe(email))
                     row.extend(csv_safe(v) for v in values[:width])
+                    row.append(csv_safe(rev.note or ""))
                     row.append(rev.revised_at)
             rows.append(row)
+        
+        # Prepend label definitions as a comment row
+        if project.labels:
+            label_info = []
+            for col, opts in project.labels.items():
+                label_info.append(f"{col}: {', '.join(opts)}")
+            rows.insert(0, ["# LABELS: " + "; ".join(label_info)] + [""] * (len(header) - 1))
+        
         return header, rows
 
 
@@ -181,6 +193,9 @@ class DefaultRecordService(RecordService):
                     key = f"c_{record.id}_{i}"
                     if key in form_data:
                         new[i] = _norm(form_data[key])
+                # Get note for this record
+                note_key = f"note_{record.id}"
+                note = _norm(form_data[note_key]) if note_key in form_data else ""
                 diffs = [i for i in range(width) if new[i] != current[i]]
                 for i in diffs:
                     self.change_repo.create(record.id, header[i], current[i], new[i], revisor_id, now)
@@ -190,7 +205,7 @@ class DefaultRecordService(RecordService):
                 # Marking a page done also records records the revisor looked at and left as is,
                 # so the export shows they were confirmed.
                 if diffs or (mark_done and record.revised_values is None):
-                    self.revision_repo.save(record.id, revisor_id, new, now)
+                    self.revision_repo.save(record.id, revisor_id, new, now, note)
 
             if mark_done:
                 self.review_repo.set(project_id, page, revisor_id, now)

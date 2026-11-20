@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS users(
 CREATE TABLE IF NOT EXISTS projects(
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
-    header TEXT NOT NULL);
+    header TEXT NOT NULL,
+    labels TEXT DEFAULT '{}');
 CREATE TABLE IF NOT EXISTS records(
     id INTEGER PRIMARY KEY,
     project_id INTEGER NOT NULL,
@@ -70,6 +71,7 @@ CREATE TABLE IF NOT EXISTS revisions(
     record_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     values_json TEXT NOT NULL,
+    note TEXT DEFAULT '',
     revised_at TEXT NOT NULL,
     PRIMARY KEY(record_id, user_id));
 CREATE TABLE IF NOT EXISTS page_reviews(

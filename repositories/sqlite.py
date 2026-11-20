@@ -72,15 +72,17 @@ class SQLiteProjectRepository(ProjectRepository):
         rows = self.db.execute("SELECT * FROM projects ORDER BY id DESC").fetchall()
         return [self._to_project(r) for r in rows]
 
-    def create(self, name: str, header: List[str]) -> Project:
+    def create(self, name: str, header: List[str], labels: dict = None) -> Project:
+        if labels is None:
+            labels = {}
         cur = self.db.execute(
-            "INSERT INTO projects(name, header) VALUES(?,?)", (name, json.dumps(header))
+            "INSERT INTO projects(name, header, labels) VALUES(?,?,?)", (name, json.dumps(header), json.dumps(labels))
         )
-        return Project(id=cur.lastrowid, name=name, header=header)
+        return Project(id=cur.lastrowid, name=name, header=header, labels=labels)
 
     @staticmethod
     def _to_project(row: sqlite3.Row) -> Project:
-        return Project(id=row["id"], name=row["name"], header=json.loads(row["header"]))
+        return Project(id=row["id"], name=row["name"], header=json.loads(row["header"]), labels=json.loads(row["labels"]))
 
 
 class SQLiteRecordRepository(RecordRepository):
@@ -90,7 +92,7 @@ class SQLiteRecordRepository(RecordRepository):
     def get_page(self, project_id: int, user_id: int, limit: int, offset: int) -> List[Record]:
         rows = self.db.execute(
             "SELECT r.id, r.project_id, r.position, r.original_values_json, "
-            "       v.values_json AS revised_json, v.revised_at "
+            "       v.values_json AS revised_json, v.revised_at, v.note "
             "FROM records r "
             "LEFT JOIN revisions v ON v.record_id = r.id AND v.user_id = ? "
             "WHERE r.project_id = ? ORDER BY r.position LIMIT ? OFFSET ?",
@@ -102,6 +104,7 @@ class SQLiteRecordRepository(RecordRepository):
                 original_values=json.loads(r["original_values_json"]),
                 revised_values=json.loads(r["revised_json"]) if r["revised_json"] else None,
                 revised_at=r["revised_at"],
+                note=r["note"] or "",
             )
             for r in rows
         ]
@@ -134,17 +137,17 @@ class SQLiteRevisionRepository(RevisionRepository):
     def __init__(self, db: sqlite3.Connection):
         self.db = db
 
-    def save(self, record_id: int, user_id: int, values: List[str], at: str) -> None:
+    def save(self, record_id: int, user_id: int, values: List[str], at: str, note: str = "") -> None:
         self.db.execute(
-            "INSERT INTO revisions(record_id, user_id, values_json, revised_at) VALUES(?,?,?,?) "
+            "INSERT INTO revisions(record_id, user_id, values_json, note, revised_at) VALUES(?,?,?,?,?) "
             "ON CONFLICT(record_id, user_id) DO UPDATE SET "
-            "values_json=excluded.values_json, revised_at=excluded.revised_at",
-            (record_id, user_id, json.dumps(values), at),
+            "values_json=excluded.values_json, note=excluded.note, revised_at=excluded.revised_at",
+            (record_id, user_id, json.dumps(values), note, at),
         )
 
     def get_by_project(self, project_id: int) -> List[Revision]:
         rows = self.db.execute(
-            "SELECT v.record_id, v.user_id, u.email, v.values_json, v.revised_at "
+            "SELECT v.record_id, v.user_id, u.email, v.values_json, v.note, v.revised_at "
             "FROM revisions v "
             "JOIN records r ON r.id = v.record_id "
             "JOIN users u ON u.id = v.user_id "
@@ -153,7 +156,7 @@ class SQLiteRevisionRepository(RevisionRepository):
         ).fetchall()
         return [
             Revision(record_id=r["record_id"], user_id=r["user_id"], email=r["email"],
-                     values=json.loads(r["values_json"]), revised_at=r["revised_at"])
+                     values=json.loads(r["values_json"]), note=r["note"] or "", revised_at=r["revised_at"])
             for r in rows
         ]
 

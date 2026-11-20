@@ -11,8 +11,9 @@ Ready to deploy on **PythonAnywhere** (steps below) or to run locally.
 **Admin**
 1. Logs in (the account is created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`).
 2. Uploads a CSV. The first row is the header; every other row is a record.
-3. Watches each revisor's progress on the **Progress** page.
-4. Downloads the combined CSV for a project.
+3. **Optionally define label options** for any column as JSON (e.g. `{"Status": ["Open", "Closed"], "Priority": ["Low", "High"]}`). Revisors will see dropdown selectors for those columns instead of free-text inputs.
+4. Watches each revisor's progress on the **Progress** page.
+5. Downloads the combined CSV for a project.
 
 **Revisor**
 1. Registers at `/register`, then logs in.
@@ -21,7 +22,8 @@ Ready to deploy on **PythonAnywhere** (steps below) or to run locally.
    - **Save draft**: keeps the edits, page is not marked done.
    - **Save & mark page done**: saves and marks the page done.
    - **Save & next page**: same, then opens the next page.
-4. Sees their own progress in every project (pages done, records saved, "Continue" button).
+4. Can add **Notes** for each record (free-text textarea).
+5. Sees their own progress in every project (pages done, records saved, "Continue" button).
 
 **Independence.** Each revisor has their own saved version of every record. One revisor's edits,
 progress and "done" pages never affect another's, and the original data is never modified.
@@ -39,19 +41,20 @@ Saving a draft with changes on a page that was done un-marks it, so "done" alway
 
 ## Downloaded CSV
 
-First the original columns. Then, for **each revisor who saved something in that project**, three groups of columns:
+First the original columns. Then, for **each revisor who saved something in that project**, four groups of columns:
 
 | Column | Content |
 |--------|---------|
 | `Revisor email (alice@x.com)` | the revisor's email, filled on every record they saved |
 | `<each original column> (alice@x.com)` | the values the revisor saved for that record |
+| `Note (alice@x.com)` | the note the revisor entered for that record |
 | `Revised at UTC (alice@x.com)` | when the revisor last saved that record |
 
 Example for columns `Name,Note` and revisors alice and bob:
 
 ```
-Name,Note,Revisor email (alice@x.com),Name (alice@x.com),Note (alice@x.com),Revised at UTC (alice@x.com),Revisor email (bob@x.com),Name (bob@x.com),Note (bob@x.com),Revised at UTC (bob@x.com)
-Ali,hello,alice@x.com,Ali,hello there,2026-11-17 12:30:05,,,,
+Name,Note,Revisor email (alice@x.com),Name (alice@x.com),Note (alice@x.com),Note (alice@x.com),Revised at UTC (alice@x.com),Revisor email (bob@x.com),Name (bob@x.com),Note (bob@x.com),Note (bob@x.com),Revised at UTC (bob@x.com)
+Ali,hello,alice@x.com,Ali,hello there,looks good,2026-11-17 12:30:05,,,,
 ```
 
 - A record the revisor never saved has blank cells in their columns.
@@ -61,6 +64,7 @@ Ali,hello,alice@x.com,Ali,hello there,2026-11-17 12:30:05,,,,
 - Text a revisor typed that starts with `=`, `@` (or `+`/`-` followed by non-numeric text) gets a leading `'`
   so Excel cannot run it as a formula.
 - The **Changes** page keeps a full audit log of every edited cell (old value, new value, who, when).
+- If label options were defined for a project, a comment row `# LABELS: ...` is prepended to the CSV.
 
 ## Configuration (`.env`)
 
@@ -81,6 +85,30 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 Revisors can never become admin by registering: registration always creates a revisor.
+
+## Column Labels (Dropdown Selection)
+
+When uploading a CSV, the admin can optionally provide a **Labels** JSON mapping column names to
+arrays of allowed options. Revisors will then see a dropdown selector for those columns instead of
+a free-text textarea.
+
+**Example:**
+```json
+{
+  "Status": ["Open", "Closed", "Pending"],
+  "Priority": ["Low", "Medium", "High"]
+}
+```
+
+- Only columns listed in the JSON get dropdowns; other columns remain as textareas.
+- The selected value is saved as plain text (same as if typed manually).
+- The exported CSV includes a comment row `# LABELS: Status: Open, Closed, Pending; Priority: Low, Medium, High`
+  so the label definitions are preserved.
+
+## Revisor Notes
+
+Each record has a **Notes** column (textarea, 2 rows) where revisors can enter free-text comments.
+Notes are saved per-revisor per-record and included in the exported CSV as `Note (email)` columns.
 
 ## Deploy on PythonAnywhere
 
